@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYLY 예약 관리자 장부</title>
+    
+    <style>
+        body { font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; padding: 20px; background: #f4f7f6; line-height: 1.6; }
+        h2 { color: #333; border-bottom: 3px solid #e67e22; padding-bottom: 10px; display: inline-block; }
+        
+        .card { 
+            background: white; 
+            border-radius: 12px; 
+            padding: 20px; 
+            margin-bottom: 25px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            border-left: 8px solid #e67e22;
+        }
+        
+        .store-name { font-size: 1.4em; font-weight: bold; color: #d35400; margin-bottom: 10px; }
+        .info { margin: 10px 0; color: #2c3e50; font-size: 1.1em; }
+        .info b { color: #e74c3c; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: #fff; }
+        th, td { border: 1px solid #eee; padding: 12px; text-align: left; }
+        th { background: #f8f9fa; color: #7f8c8d; font-weight: bold; }
+        
+        .total { 
+            text-align: right; 
+            font-size: 1.3em; 
+            font-weight: bold; 
+            margin-top: 15px; 
+            padding-top: 10px;
+            border-top: 2px dashed #eee;
+            color: #2c3e50; 
+        }
+        .total span { color: #e74c3c; }
+    </style>
+</head>
+<body>
+    <h2>🚀 SYLY 실시간 예약 장부</h2>
+    
+    <div id="reservation-list">
+        <p style="color: #666;">데이터를 불러오는 중입니다... 띠용띠용...</p>
+    </div>
+
+    <script>
+        async function loadReservations() {
+            try {
+                // 백엔드에서 데이터 가져오기 (환경변수로 URL 주입 가능)
+                // - Spring이 /admin.html로 내려줄 때 "__RESERVATION_LIST_URL__" 토큰을 치환합니다.
+                // - 토큰 치환이 실패하면 로컬 기본값(`/api/reservations/admin/list`)으로 폴백합니다.
+                const injectedUrl = '__RESERVATION_LIST_URL__';
+                const reservationListUrl =
+                    (injectedUrl && injectedUrl !== '__RESERVATION_LIST_URL__')
+                        ? injectedUrl
+                        : '/api/reservations/admin/list';
+                const response = await fetch(reservationListUrl);
+                const data = await response.json();
+                
+                const listDiv = document.getElementById('reservation-list');
+                
+                if (data.length === 0) {
+                    listDiv.innerHTML = "<p>아직 들어온 예약이 없습니다. 손님을 기다려보세요! ☕</p>";
+                    return;
+                }
+
+                listDiv.innerHTML = data.map(res => `
+                    <div class="card">
+                        <div class="store-name">🏢 가게 정보: ${res.storeId}</div>
+                        <div class="info">
+                            ⏰ 예약시간: <b>${res.time}</b> | 👥 예약인원: <b>${res.headcount}명</b>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>메뉴 이름</th>
+                                    <th>수량</th>
+                                    <th>단가</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${res.menuItems.map(item => `
+                                    <tr>
+                                        <td>${item.name}</td>
+                                        <td>${item.quantity}개</td>
+                                        <td>${item.price.toLocaleString()}원</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                        <div class="total">총 결제 예정 금액: <span>${res.totalAmount.toLocaleString()}원</span></div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error("데이터 로딩 실패:", error);
+            }
+        }
+        
+        // 실행! (처음 한 번, 그리고 5초마다)
+        loadReservations();
+        setInterval(loadReservations, 5000);
+    </script>
+</body>
+</html>

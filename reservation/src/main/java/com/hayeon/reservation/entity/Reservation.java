@@ -2,51 +2,51 @@ package com.hayeon.reservation.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
-import java.util.ArrayList;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
-@Table(name = "reservations")
+@Table(name = "reservations", indexes = {
+    @Index(name = "idx_user_phone", columnList = "user_phone"),
+    @Index(name = "idx_store_created", columnList = "store_id, created_at"),
+    @Index(name = "idx_slot", columnList = "slot_id")
+})
 @Getter
 @Setter
-@NoArgsConstructor
 public class Reservation {
-
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "reservation_id", length = 13)
+    private String reservationId;
 
-    @Column(nullable = false)
-    private String storeId;
+    @Column(name = "user_name", nullable = false, length = 50)
+    private String userName;
+
+    @Column(name = "group_name", nullable = false, length = 100)
+    private String groupName;
+
+    @Column(name = "user_phone", nullable = false, length = 20)
+    private String userPhone;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "store_id", nullable = false)
+    private Store store;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "slot_id", nullable = false)
+    private Slot slot;
 
     @Column(nullable = false)
     private Integer headcount;
 
-    @Column(nullable = false)
-    private String time;
-
-    @Column(nullable = false)
+    @Column(name = "total_amount", nullable = false)
     private Integer totalAmount;
 
     @Column(nullable = false)
-    private Integer minOrderAmount = 0;
+    private String status = "CONFIRMED";
 
-    @Column(nullable = false)
-    private String status = "PENDING";
+    @Column(name = "user_note", length = 255)
+    private String userNote;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
-
-    // 상세 메뉴 리스트 (ReservationMenuItem.java 파일과 연결됨)
-    // Reservation.java 파일 수정
-    @ElementCollection(fetch = FetchType.EAGER) // (fetch = FetchType.EAGER) 를 추가!!
-    @CollectionTable(
-        name = "reservation_menu_items", 
-        joinColumns = @JoinColumn(name = "reservation_id")
-    )
-    private List<ReservationMenuItem> menuItems = new ArrayList<>();
-
 }
